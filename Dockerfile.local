@@ -1,0 +1,21 @@
+FROM golang:1.22.3-alpine as build
+LABEL authors="allzhass"
+
+WORKDIR /build
+COPY . /build/
+
+RUN go mod download
+RUN apk add bash git gcc gettext musl-dev
+
+# Build your Go application
+RUN go build -o app ./cmd/main.go
+
+FROM alpine as run
+
+COPY --from=build /build/app /app
+ENV SERVER_PORT=8080
+ENV SMART_BRIDGE_URL=https://smartbrigde-ext.altyn-i.kz/bip-sync-wss-gost/
+ENV VSHEP_SIGN_URL="https://esb.altyn-i.kz/signapp/vshep/sign/soap"
+
+EXPOSE 8080
+CMD ["/app"]
