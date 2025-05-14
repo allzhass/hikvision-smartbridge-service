@@ -17,7 +17,14 @@ func NewVshepServiceImpl(vshepURL string) *VshepServiceImpl {
 }
 
 func (v *VshepServiceImpl) SendRequest(request []byte) (int, []byte, error) {
-	client := http.Client{Timeout: 10 * time.Second}
+	t := http.DefaultTransport.(*http.Transport).Clone()
+	t.MaxIdleConns = 100
+	t.MaxConnsPerHost = 100
+	t.MaxIdleConnsPerHost = 100
+	client := &http.Client{
+		Timeout:   45 * time.Second,
+		Transport: t,
+	}
 	req, err := http.NewRequest(http.MethodPost, v.vshepURL, bytes.NewBuffer(request))
 	req.Header.Add("Content-Type", "text/xml;charset=UTF-8")
 
