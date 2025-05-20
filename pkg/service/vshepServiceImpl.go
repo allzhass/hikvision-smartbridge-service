@@ -5,6 +5,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"net/http"
+	"regexp"
 	"time"
 )
 
@@ -40,11 +41,21 @@ func (v *VshepServiceImpl) SendRequest(request []byte) (int, []byte, error) {
 		logrus.Errorf("Error in calling vshep: %v", err)
 		return 500, nil, err
 	}
-	logrus.Info("Vshep Status: " + resp.Status)
-	logrus.Info("Vshep Header: ")
-	logrus.Info(resp.Header)
-	logrus.Info("Vshep Body: ")
-	logrus.Info(string(respBytes))
 
+	logrus.WithFields(logrus.Fields{
+		"message_id": getMessageId(request),
+		"status":     resp.StatusCode,
+		"response":   string(respBytes),
+	}).Info("Vshep")
 	return resp.StatusCode, respBytes, nil
+}
+
+func getMessageId(request []byte) string {
+	re := regexp.MustCompile(`<message_id>(.*?)</message_id>`)
+	match := re.FindStringSubmatch(string(request))
+	if len(match) > 1 {
+		return match[1]
+	} else {
+		return "error: message_id not found"
+	}
 }
